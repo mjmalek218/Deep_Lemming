@@ -31,7 +31,7 @@ struct FFNN
      one long vector of weights, and we would keep track of weights internally, 
      but this configuration should be more organized. If the pointers become
      too much of a bottleneck, we will change this design. */
-  matrix* weights;
+  matrix** weights;
 
   /* For right now, we will use a single *hidden* activation function across the entire
      network. Also since back propagation is specific to the activation
@@ -57,8 +57,19 @@ struct FFNN
 
 /* Quick sum function for array allocation purposes. Sums up the total 
    number of fixed-point integers over the  array. */
-  fp sum_array(fp* , size_t)
+
+/* *NVM* turns out this isn't necessary in this specific instance, though
+   in general seems like it might be a useful function tbh so I'll keep
+   it for now */
+  fp sum_array(fp* array, size_t length)
   {
     fp sum = 0;
+    int i = 0;
 
+    for (i = 0; i < length; i++)
+      {
+	sum += array[i];
+      }
+    
+    return sum;
   }
