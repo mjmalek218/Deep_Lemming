@@ -9,19 +9,32 @@
 
 
 
-/*  All major work, includin intialization of the weights,
+/* All major work, including intialization of the weights,
    will be performed by the user. After having 
    read the paper the program will be based upon, it seems as though
    this initialization procedure will have to become significantly
    more sophisticated upon further iterations of design, in order to 
    allow the SGD optimization to (specifically on the auto-encoder)
    converge to a reasonable solution. */
+
+/* Not that num layers INCLUDES the output layer */
 struct FFNN*  init_FFNN(size_t num_layers, size_t *widths, 
 			matrix** weights,  fp (*hidden_act_func)(fp),  
 			fp learning_rate, fp (*output_func)(fp))
 {
   /* Allocate necessary memory for the struct */
   struct FFNN* ffnn = malloc(size(struct FNNN));
+
+  int i = 0;
+
+  /* Least we can do is assert all component matrices of the passed in
+     array of pointers to weight matrices are valid. There should
+     be one less weight matrix than the given number here, as the 
+     weight matrices only correspond to the spaces between layers */
+  for (i = 0; i < num_layers - 1; i++)
+    {
+      is_valid( (*weights)[i]);      
+    }
 
   /* All the memory should be allocated already. We just need to set it equal.
      The major allocation work needs to be done by the user of this file,
@@ -49,7 +62,8 @@ void free_FFNN(FFNN* ffnn)
       free_matrix(weights[i]);
     }
 
-
+  /* Then free the weight array itself */
+  free(ffnn->weights);
 }
 
 
@@ -65,48 +79,67 @@ void free_FFNN(FFNN* ffnn)
    NOTE: the length of the input needs to match up with
    the length of the first layer: otherwise there is some
    problem here. */
-matrix* forward_prop(FFNN ffnn, matrix* inp, size_t length)
+matrix* forward_prop(FFNN ffnn, matrix* inp, size_t inp_length)
 {
   /* On each iteration, we allocate a matrix of outputs. Once the 
      computation of the next layer is complete, we free the 
-     next layer. It is then the job of the receiving function
+     previous layer. It is then the job of the receiving function
      to free the final output, which is naturally the only exception 
      to the above chain. */
   
-
   /* First assert the input length is the same as the width of the
      first layer */
-  assert(length == ffnn->widths[0]);
+  assert(inp_length == ffnn->widths[0]);
 
-  int i;
+  matrix* prev_layer, next_layer;
+
+  prev_layer = inp;
   
-  /* Now iterate through and feed in previous layer into next */
-  for (i = 0; i < length - 1; i++)
+  /* Now iterate through and feed in previous layer into next. Note 
+     allocating and re-allocating and free-ing this memory is *quite*
+     inefficient: the reset function *needs* to be made more efficient
+     somehow: TODO: look into how matlab allocates and resizes matrices
+     on a system level. */
+  int i, j;
+  for (i = 0; i < ffnn->num_layers; i++)
     {
-      
+      reset_matrix(curr_output, ffnn->widths[i+1], 1);
 
+      for (j = 1; j <= ffnn->widths[i+1]; j++)
+	{
+	  /* Apply weight multiplication and
+	     activation function simultaneously. */
+	  set_elem(curr_layer, 
+		   j, 1, 
+		   ffnn->hidden_act_func(naive_mat_mult(ffnn->weights[i]), 
+					                prev_layer,
+					                next_layer));
+	}
+
+       deep_copy(next_layer, prev_layer);
     }
 
-
   /* Then on the final layer use the output function */
+  for (j = 1; j <= ffnn->widths[ffnn->num_layers - 1]; j++)
+    {
+      set_elem(curr_layer, 
+	       j, 1, 
+	       ffnn->output_func(naive_mat_mult(ffnn->weights[i]), 
+					        prev_layer,
+					        next_layer));
+      
+    }
+
+  free_matrix(prev_layer);
+
+  return next_layer;
 }
 
-/* Given an FFNN, input layer, output layer, 
-   this function computes the n^th hidden layer.
-   Layers are 0-based indexed.   */
-matrix* compute_hidden_layer(FFNN ffnn, size_t n, matrix* prev)
-{
-  /* assume all vectors are column vectors */
-  matrix* next = init_matrix(ffnn->widths[], 1);
-
-
-}
-
-/* performs one pass of back-propagation through the input-ed
-   neural network. For this... it needs an input vector,
-   the current output this input produces, and the corresponding desired 
-   output. Weights are updated based upon the neural network's learning 
-   rate. */
+/* performs one pass of back-propagation through the input
+   neural network. For this... it needs an input matrix (really composed of
+   multiple inputs), the current output this input produces, and the 
+   corresponding desired output. Weights are updated based upon the neural 
+   network's learning rate. */
 void back_prop(FFNN* inp_ffnn, )
 {
 
