@@ -145,8 +145,7 @@ void back_prop(FFNN* inp_ffnn, )
 
 }
 
-/* Given an activation function, a matrix of input data which corresponds
-   to a matrix of output data, a learning rate, a set of data */
+/* Given an a */
 void train_FFNN(
 
 
